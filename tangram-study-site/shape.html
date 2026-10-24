@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tangram Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a quiet single-task study screen — one step at a time, figure on the left, question on the right (stacked on phones). Each finished run is sent to the Google Sheet set in config.js. */
+:root{
+  --bg:#f3f4f7; --surface:#ffffff; --sunk:#eceef2; --ink:#1c2230; --muted:#5d6676; --line:#d6dae2;
+  --accent:#2f55b4; --accent-ink:#ffffff; --accent-soft:#e3e9f8; --tan:#2c3446; --sel:#2f55b4; --ok:#2e7d4f; --warn:#a15c00;
+  --pairA:#2f55b4; --pairB:#b0466c;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12151b; --surface:#1a1f28; --sunk:#10141a; --ink:#e5e8ee; --muted:#9aa3b2; --line:#2c3340;
+  --accent:#8fa8f0; --accent-ink:#10141a; --accent-soft:#232c45; --tan:#d4d9e2; --sel:#8fa8f0; --ok:#6fcf97; --warn:#f0b35a;
+  --pairA:#8fa8f0; --pairB:#e98aac; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151b; --surface:#1a1f28; --sunk:#10141a; --ink:#e5e8ee; --muted:#9aa3b2; --line:#2c3340;
+  --accent:#8fa8f0; --accent-ink:#10141a; --accent-soft:#232c45; --tan:#d4d9e2; --sel:#8fa8f0; --ok:#6fcf97; --warn:#f0b35a;
+  --pairA:#8fa8f0; --pairB:#e98aac; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;min-height:28px}
+.step{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.bar{flex:1;max-width:320px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .2s}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+h1{font-size:1.6rem;font-weight:600;margin:0 0 10px;text-wrap:balance}
+h2{font-size:1.2rem;font-weight:600;margin:0 0 6px;text-wrap:balance}
+p{margin:0 0 12px;max-width:62ch}
+.muted{color:var(--muted)}
+.split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:720px){.split{grid-template-columns:minmax(0,1fr)}}
+.fig{background:var(--sunk);border-radius:10px;padding:10px}
+.fig svg{display:block;width:100%;height:auto;max-height:62vh}
+.pc{fill:var(--tan);stroke:var(--surface);stroke-width:.035;stroke-linejoin:round}
+.interactive .pc{cursor:pointer}
+.interactive .pc:hover{filter:brightness(1.25)}
+.pc.sel{stroke:var(--sel);stroke-width:.09}
+.pc:focus-visible{outline:none;stroke:var(--sel);stroke-width:.09}
+.panel{display:flex;flex-direction:column;gap:18px}
+.q label{display:block;font-weight:600;margin-bottom:6px}
+.help{font-size:14px;color:var(--muted);margin:0 0 8px}
+input[type=text],textarea{font:inherit;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+input[type=text]:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row input{flex:1 1 180px;min-width:0}
+button{font:inherit;font-size:15px;border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.locked{display:flex;justify-content:space-between;gap:10px;align-items:baseline;background:var(--sunk);border-radius:8px;padding:8px 12px}
+.locked b{font-weight:600}
+.linkbtn{border:0;background:none;color:var(--accent);padding:0;font-size:14px;text-decoration:underline}
+.parts{display:flex;flex-direction:column;gap:6px;margin:6px 0 0;padding:0;list-style:none}
+.parts li{display:flex;align-items:center;gap:10px;background:var(--sunk);border-radius:8px;padding:6px 8px 6px 10px}
+.parts .sw{width:14px;height:14px;border-radius:3px;flex:0 0 14px}
+.parts .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.parts .ct{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.parts button{padding:2px 8px;font-size:13px}
+.count{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.count.done{color:var(--ok)}
+.nav{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+.pair2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 18px}
+.scale{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.scale button{padding:10px 0;font-family:var(--mono);font-weight:500}
+.scale button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:6px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}
+@media (max-width:720px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--sunk);border:2px solid transparent;border-radius:10px;padding:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tile svg{width:100%;height:auto;display:block}
+.tile .tg{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:18px}
+.tile.picked{border-color:var(--ink)}
+.tile.A{border-color:var(--pairA)} .tile.A .tg{color:var(--pairA)}
+.tile.B{border-color:var(--pairB)} .tile.B .tg{color:var(--pairB)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.notice{border-radius:8px;padding:10px 12px;background:var(--accent-soft);font-size:14px}
+.notice.warn{background:transparent;border:1px solid var(--warn);color:var(--ink)}
+pre.json{font-family:var(--mono);font-size:12px;background:var(--sunk);border-radius:8px;padding:10px;max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+footer{margin-top:18px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+/* researcher view */
+.res h2{margin-top:6px}
+.tbl{overflow-x:auto;margin:8px 0 18px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12.5px;font-weight:600;color:var(--muted);background:var(--sunk)}
+td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.thumbs{display:flex;gap:6px}
+.thumbs svg{width:44px;height:auto;background:var(--sunk);border-radius:4px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="top"><span class="step" id="stepLabel">Welcome</span><div class="bar" aria-hidden="true"><i id="barFill" style="width:0%"></i></div></div>
+  <main id="app" class="card" aria-live="polite"></main>
+  <footer><span id="footNote"></span></footer>
+</div>
+
+<script src="config.js"></script>
+<script type="application/json" id="items">{"W": 5.7, "H": 5.943, "items": [{"code": "RA", "src": "page5-132", "ext": [5.0, 4.0], "pieces": [{"id": 1, "kind": "SQ", "pts": [[3.35, 4.971], [2.35, 4.971], [2.35, 3.971], [3.35, 3.971]]}, {"id": 2, "kind": "PA", "pts": [[3.35, 2.971], [2.35, 3.971], [2.35, 2.971], [3.35, 1.971]]}, {"id": 3, "kind": "ST", "pts": [[2.35, 2.971], [3.35, 1.971], [2.35, 1.971]]}, {"id": 4, "kind": "ST", "pts": [[3.35, 3.971], [2.35, 3.971], [3.35, 2.971]]}, {"id": 5, "kind": "MT", "pts": [[1.916, 1.971], [3.916, 1.971], [2.916, 0.971]]}, {"id": 6, "kind": "LT", "pts": [[2.35, 3.971], [2.35, 1.971], [0.35, 1.971]]}, {"id": 7, "kind": "LT", "pts": [[3.35, 3.971], [3.35, 1.971], [5.35, 1.971]]}]}, {"code": "SA", "src": "page7-216", "ext": [2.828423984146285, 5.2426473848454895], "pieces": [{"id": 1, "kind": "SQ", "pts": [[3.304, 0.35], [3.304, 1.35], [2.304, 1.35], [2.304, 0.35]]}, {"id": 2, "kind": "PA", "pts": [[4.264, 1.35], [3.557, 2.057], [2.143, 2.057], [2.85, 1.35]]}, {"id": 3, "kind": "ST", "pts": [[2.143, 2.057], [2.85, 1.35], [1.436, 1.35]]}, {"id": 4, "kind": "ST", "pts": [[2.143, 3.471], [2.85, 2.764], [2.143, 2.057]]}, {"id": 5, "kind": "MT", "pts": [[3.557, 3.471], [3.557, 2.057], [2.143, 2.057]]}, {"id": 6, "kind": "LT", "pts": [[2.85, 5.593], [1.436, 4.178], [2.85, 2.764]]}, {"id": 7, "kind": "LT", "pts": [[2.85, 5.593], [4.264, 4.178], [2.85, 2.764]]}]}, {"code": "RL", "src": "page3-193", "ext": [3.1293103448275863, 4.870689655172414], "pieces": [{"id": 1, "kind": "SQ", "pts": [[2.285, 1.536], [3.285, 1.536], [3.285, 0.536], [2.285, 0.536]]}, {"id": 2, "kind": "PA", "pts": [[3.414, 3.407], [4.414, 4.407], [4.414, 5.407], [3.414, 4.407]]}, {"id": 3, "kind": "ST", "pts": [[1.414, 5.407], [2.414, 4.407], [1.414, 4.407]]}, {"id": 4, "kind": "ST", "pts": [[4.285, 1.536], [3.285, 1.536], [3.285, 0.536]]}, {"id": 5, "kind": "MT", "pts": [[2.285, 2.536], [1.285, 1.536], [2.285, 0.536]]}, {"id": 6, "kind": "LT", "pts": [[3.414, 4.407], [1.414, 4.407], [3.414, 2.407]]}, {"id": 7, "kind": "LT", "pts": [[2.285, 3.536], [4.285, 1.536], [2.285, 1.536]]}]}, {"code": "SL", "src": "draft5_left_arm", "ext": [5.0, 4.0], "pieces": [{"id": 1, "kind": "LT", "pts": [[2.35, 1.971], [4.35, 1.971], [2.35, 3.972]]}, {"id": 2, "kind": "LT", "pts": [[1.35, 4.972], [3.35, 4.972], [3.35, 2.972]]}, {"id": 3, "kind": "MT", "pts": [[0.35, 3.972], [2.35, 3.972], [1.35, 4.972]]}, {"id": 4, "kind": "ST", "pts": [[3.35, 3.972], [4.35, 3.972], [3.35, 4.972]]}, {"id": 5, "kind": "PA", "pts": [[3.35, 4.972], [4.35, 3.972], [5.35, 3.972], [4.35, 4.972]]}, {"id": 6, "kind": "SQ", "pts": [[2.35, 1.971], [3.35, 1.971], [3.35, 0.971], [2.35, 0.971]]}, {"id": 7, "kind": "ST", "pts": [[2.35, 1.971], [2.35, 2.972], [1.35, 2.972]]}]}], "set": "v2-left-arm", "fixed": "shape"}</script>
+<script>
+(function(){
+const G=JSON.parse(document.getElementById('items').textContent);
+const STIM_SET=G.set||'v1-flag'; const ITEMS=G.items, W=G.W, H=G.H, CODES=ITEMS.map(i=>i.code), BY={}; ITEMS.forEach(i=>BY[i.code]=i);
+const PAL=['#4477aa','#ee6677','#228833','#ccbb44','#66ccee','#aa3377','#bb7733'];
+const $=s=>document.querySelector(s), app=$('#app');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const now=()=>Date.now();
+
+// ---------- condition ----------
+const COND_TEXT={
+ vehicle:{intro:'Each of the four pictures in this study shows a <b>vehicle</b>, built from seven tangram pieces.',noun:'vehicle',nouns:'vehicles',
+   whole:'Describe this vehicle.',parts:'Now name the parts of this vehicle.',sim:'How similar are these two vehicles?',
+   pair:'Split the four vehicles into two pairs, so that the two vehicles in each pair are the most similar to each other.'},
+ person:{intro:'You will see four pictures, each built from seven tangram pieces.</p><p><b>Each picture shows a person in some pose, like standing, sitting, running or dancing.</b>',noun:'person',nouns:'people',
+   whole:"Describe this person's pose.",parts:'Now name the parts of this person.',sim:'How similar are these two people?',
+   pair:'Split the four people into two pairs, so that the two people in each pair are the most similar to each other.'},
+ free:{intro:'You will see four pictures, each built from seven tangram pieces.',noun:'picture',nouns:'pictures',
+   whole:'Describe this picture.',parts:'Now name the parts of this picture.',sim:'How similar are these two pictures?',
+   pair:'Split the four pictures into two pairs, so that the two pictures in each pair are the most similar to each other.'},
+ shape:{intro:'You will see four pictures, each built from seven tangram pieces.',noun:'picture',nouns:'pictures',
+   whole:'',parts:'',sim:'How similar are these two pictures?',
+   pair:'Split the four pictures into two pairs, so that the two pictures in each pair are the most similar to each other.'}};
+const hash=location.hash.replace('#','');
+const FIXED=G.fixed||null;
+const COND=FIXED||(COND_TEXT[hash]?hash:(Math.random()<0.5?'vehicle':'person'));
+const TX=COND_TEXT[COND];
+
+// ---------- run state ----------
+const run={stimulus_set:STIM_SET,run_id:Math.random().toString(36).slice(2,10)+now().toString(36),condition:COND,condition_source:FIXED?'fixed':(COND_TEXT[hash]?'link':'random'),
+  started_at:new Date().toISOString(),order:shuffle(CODES),items:{},similarity:[],pairing:null,comment:'',finished_at:null};
+const SIM_PAIRS=shuffle([['RA','SA'],['RA','RL'],['RA','SL'],['SA','RL'],['SA','SL'],['RL','SL']]).map(p=>Math.random()<.5?p:[p[1],p[0]]);
+const NO_NAMING=COND==='shape';
+const STEPS=NO_NAMING?1+6+1+1:1+4+6+1+1; let stepNo=0;
+function setStep(label){ const s=NO_NAMING&&stepNo>=5?stepNo-4:stepNo; $('#stepLabel').textContent=label; $('#barFill').style.width=Math.round(100*s/STEPS)+'%'; }
+
+// ---------- drawing ----------
+function svg(code,{interactive=false,assign=null,parts=null,selected=null,cls=''}={}){
+  const it=BY[code]; let s=`<svg viewBox="0 0 ${W} ${H}" class="${cls}${interactive?' interactive':''}" role="${interactive?'group':'img'}" aria-label="${interactive?'Tangram pieces, click to select':'Tangram picture'}">`;
+  it.pieces.forEach(p=>{
+    const pts=p.pts.map(q=>q.join(',')).join(' ');
+    let fill=''; if(assign&&assign[p.id]!=null){fill=` style="fill:${PAL[assign[p.id]%PAL.length]}"`}
+    const sel=selected&&selected.has(p.id)?' sel':'';
+    s+=`<polygon class="pc${sel}" data-id="${p.id}" points="${pts}"${fill}${interactive?` tabindex="0" role="button" aria-pressed="${sel?'true':'false'}" aria-label="piece ${p.id}"`:''}/>`;
+  });
+  return s+'</svg>';
+}
+
+// ---------- screens ----------
+function intro(){
+  stepNo=0; setStep('Welcome');
+  app.innerHTML=`<h1>${NO_NAMING?'Comparing tangram pictures':'Naming tangram pictures'}</h1>
+   <p>${TX.intro}</p>
+   <p>${NO_NAMING?'You will compare the pictures two at a time, then sort them into two pairs.':'For each picture you will first describe it, then name its parts by clicking the pieces that belong together. After that you will compare the pictures.'}</p>
+   <p class="muted">There are no right or wrong answers. Go with what you see.</p>
+   <div class="nav"><button class="primary" id="go">Start</button></div>`;
+  $('#go').onclick=()=>{run.t0=now();NO_NAMING?simIntro():itemScreen(0)};
+}
+
+function itemScreen(k){
+  const code=run.order[k]; stepNo=1+k; setStep(`Picture ${k+1} of 4`);
+  const st=run.items[code]||(run.items[code]={order_index:k,whole:'',parts:[],t_shown:now()});
+  let assign={}, selected=new Set(), wholeDone=!!st.whole;
+  st.parts.forEach((pt,i)=>pt.pieces.forEach(pid=>assign[pid]=i));
+  function render(){
+    const nAssigned=Object.keys(assign).length;
+    app.innerHTML=`<div class="split">
+      <div class="fig" id="figBox">${svg(code,{interactive:wholeDone,assign,selected})}</div>
+      <div class="panel">
+        <div class="q">${wholeDone?`<label>${esc(TX.whole)}</label><div class="locked"><b>${esc(st.whole)}</b><button class="linkbtn" id="editWhole">Change</button></div>`:
+          `<label for="whole">${esc(TX.whole)}</label><div class="row"><input type="text" id="whole" autocomplete="off" maxlength="300" placeholder="A few words or a sentence"><button class="primary" id="wholeOk" disabled>Continue</button></div>`}</div>
+        ${wholeDone?`<div class="q">
+          <label for="partName">${esc(TX.parts)}</label>
+          <p class="help">Click the piece or pieces that make up one part, type the part's name, and press Add part. Keep going until every piece belongs to a part.</p>
+          <div class="row"><input type="text" id="partName" autocomplete="off" maxlength="60" placeholder="${selected.size?`Name for ${selected.size} selected piece${selected.size>1?'s':''}`:'Select pieces first'}"><button id="addPart" disabled>Add part</button></div>
+          <ul class="parts" id="partList">${st.parts.map((pt,i)=>`<li><span class="sw" style="background:${PAL[i%PAL.length]}"></span><span class="nm">${esc(pt.label)}</span><span class="ct">${pt.pieces.length} pc</span><button data-rm="${i}" aria-label="Remove part ${esc(pt.label)}">Remove</button></li>`).join('')}</ul>
+          <p class="count ${nAssigned===7?'done':''}" style="margin-top:8px">${nAssigned} of 7 pieces named</p>
+        </div>`:''}
+        <div class="nav"><button class="primary" id="next" ${wholeDone&&nAssigned===7?'':'disabled'}>${k<3?'Next picture':'Continue'}</button></div>
+      </div></div>`;
+    if(!wholeDone){
+      const inp=$('#whole'), ok=$('#wholeOk'); inp.value=st.whole||''; inp.focus();
+      const upd=()=>ok.disabled=!inp.value.trim(); inp.oninput=upd; upd();
+      const done=()=>{ if(!inp.value.trim())return; st.whole=inp.value.trim(); st.whole_rt_ms=now()-st.t_shown; wholeDone=true; render(); };
+      ok.onclick=done; inp.onkeydown=e=>{if(e.key==='Enter')done()};
+      return;
+    }
+    $('#editWhole').onclick=()=>{wholeDone=false;render()};
+    const fig=$('#figBox');
+    const toggle=id=>{ selected.has(id)?selected.delete(id):selected.add(id); const v=$('#partName').value; render(); const pn=$('#partName'); pn.value=v; pn.focus(); updAdd(); };
+    fig.querySelectorAll('.pc').forEach(el=>{ const id=+el.dataset.id;
+      el.onclick=()=>toggle(id); el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(id)}}; });
+    const pn=$('#partName'), add=$('#addPart');
+    const updAdd=()=>{ $('#addPart').disabled=!(selected.size&&$('#partName').value.trim()) };
+    pn.oninput=updAdd; updAdd();
+    const doAdd=()=>{ const label=pn.value.trim(); if(!label||!selected.size)return;
+      const ids=[...selected].sort((a,b)=>a-b);
+      st.parts=st.parts.map(pt=>({...pt,pieces:pt.pieces.filter(x=>!selected.has(x))})).filter(pt=>pt.pieces.length);
+      st.parts.push({label,pieces:ids,t:now()-st.t_shown});
+      assign={}; st.parts.forEach((pt,i)=>pt.pieces.forEach(pid=>assign[pid]=i)); selected=new Set(); render(); const p2=$('#partName'); if(p2&&Object.keys(assign).length<7)p2.focus(); };
+    add.onclick=doAdd; pn.onkeydown=e=>{if(e.key==='Enter')doAdd()};
+    app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ st.parts.splice(+b.dataset.rm,1); assign={}; st.parts.forEach((pt,i)=>pt.pieces.forEach(pid=>assign[pid]=i)); render(); });
+    const nx=$('#next'); nx.onclick=()=>{ st.t_done=now(); st.total_ms=st.t_done-st.t_shown; k<3?itemScreen(k+1):simIntro(); };
+  }
+  render();
+}
+
+function simIntro(){
+  stepNo=5; setStep('Comparing');
+  app.innerHTML=`<h2>Comparing the ${esc(TX.nouns)}</h2><p>Next you will see the ${esc(TX.nouns)} two at a time. For each pair, say how similar they are on a scale from 1 (not at all similar) to 7 (very similar).</p><div class="nav"><button class="primary" id="go">Start comparing</button></div>`;
+  $('#go').onclick=()=>simScreen(0);
+}
+
+function simScreen(k){
+  const [a,b]=SIM_PAIRS[k]; stepNo=5+k; setStep(`Comparison ${k+1} of 6`);
+  const t0=now(); let val=null;
+  app.innerHTML=`<h2>${esc(TX.sim)}</h2>
+    <div class="pair2"><div class="fig">${svg(a)}</div><div class="fig">${svg(b)}</div></div>
+    <div class="scale" role="group" aria-label="Similarity from 1 to 7">${[1,2,3,4,5,6,7].map(v=>`<button data-v="${v}" aria-pressed="false">${v}</button>`).join('')}</div>
+    <div class="ends"><span>Not at all similar</span><span>Very similar</span></div>
+    <div class="nav" style="margin-top:16px"><button class="primary" id="next" disabled>${k<5?'Next pair':'Continue'}</button></div>`;
+  app.querySelectorAll('.scale button').forEach(bt=>bt.onclick=()=>{ val=+bt.dataset.v; app.querySelectorAll('.scale button').forEach(x=>x.setAttribute('aria-pressed',x===bt)); $('#next').disabled=false; });
+  $('#next').onclick=()=>{ run.similarity.push({index:k,left:a,right:b,pair:[a,b].sort().join('-'),rating:val,rt_ms:now()-t0}); k<5?simScreen(k+1):pairScreen(); };
+}
+
+function partitionOf(pairs){
+  const key=pairs.map(p=>p.slice().sort().join('+')).sort().join(' | ');
+  const has=(x,y)=>pairs.some(p=>p.includes(x)&&p.includes(y));
+  return {key,type:has('RA','RL')?'vehicle (rocket vs ship)':has('RA','SA')?'person (arms vs legs)':'neither (differ on both)'};
+}
+
+function pairScreen(){
+  stepNo=11; setStep('Pairing');
+  const order=shuffle(CODES), t0=now(); let first=null, pairA=null;
+  function render(){
+    const label=c=>pairA?(pairA.includes(c)?'A':'B'):(c===first?'picked':'');
+    app.innerHTML=`<h2>${esc(TX.pair)}</h2>
+      <p class="help">Click two ${esc(TX.nouns)} that go together. The other two become the second pair.</p>
+      <div class="grid4">${order.map(c=>{const l=label(c);return `<div class="tile ${l}" data-c="${c}" tabindex="0" role="button" aria-pressed="${!!l}">${svg(c)}<span class="tg">${l==='A'?'Pair 1':l==='B'?'Pair 2':l==='picked'?'Selected':''}</span></div>`}).join('')}</div>
+      <div class="nav"><button id="reset" ${first||pairA?'':'disabled'}>Start over</button><button class="primary" id="next" ${pairA?'':'disabled'}>Continue</button></div>`;
+    app.querySelectorAll('.tile').forEach(t=>{ const c=t.dataset.c; const act=()=>{ if(pairA)return; if(first===null){first=c}else if(first===c){first=null}else{pairA=[first,c]} render(); };
+      t.onclick=act; t.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act()}}; });
+    $('#reset').onclick=()=>{first=null;pairA=null;render()};
+    $('#next').onclick=()=>{ const pairB=CODES.filter(c=>!pairA.includes(c)); const pr=partitionOf([pairA,pairB]);
+      run.pairing={pairs:[pairA,pairB],partition:pr.key,partition_type:pr.type,rt_ms:now()-t0}; finalScreen(); };
+  }
+  render();
+}
+
+function finalScreen(){
+  stepNo=12; setStep('Last step');
+  app.innerHTML=`<h2>Anything else?</h2><p class="help">Optional: anything you noticed, or anything that was unclear.</p>
+    <textarea id="cm" rows="3" maxlength="1000"></textarea>
+    <div class="nav" style="margin-top:14px"><button class="primary" id="submit">Submit</button></div>`;
+  $('#submit').onclick=submit;
+}
+
+async function submit(){
+  run.comment=$('#cm').value.trim(); run.finished_at=new Date().toISOString(); run.total_ms=now()-run.t0;
+  stepNo=STEPS; setStep('Done');
+  app.innerHTML=`<p>Sending your responses…</p>`;
+  const json=JSON.stringify(run);
+  const url=((window.TANGRAM_CONFIG||{}).endpoint||'').trim();
+  async function send(){
+    if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)) return 'This copy of the study is not connected to a results sheet yet.';
+    try{ await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:json}); return ''; }
+    catch(e){ return 'Your responses could not be sent. Check your internet connection and try again.'; }
+  }
+  async function show(){
+    const why=await send();
+    if(!why){ app.innerHTML=`<h1>Thank you</h1><p class="notice">Your responses were sent.</p>`; return; }
+    app.innerHTML=`<h1>Thank you</h1><p class="notice warn">${esc(why)} If it still does not work, download your responses (or copy them) and email them to the researcher.</p>
+     <div class="nav" style="justify-content:flex-start;flex-wrap:wrap"><button class="primary" id="retry">Try again</button><button id="dlr">Download my responses</button><button id="cp">Copy responses</button></div>
+     <pre class="json" id="js">${esc(JSON.stringify(run,null,1))}</pre>`;
+    $('#retry').onclick=()=>{ app.innerHTML=`<p>Sending your responses…</p>`; show(); };
+    $('#dlr').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(run,null,1)],{type:'application/json'})); a.download=`tangram-${run.condition}-${run.run_id}.json`; document.body.appendChild(a); a.click(); a.remove(); };
+    const cp=$('#cp'); cp.onclick=()=>{ navigator.clipboard.writeText(JSON.stringify(run,null,1)).then(()=>cp.textContent='Copied').catch(()=>{const r=document.createRange();r.selectNodeContents($('#js'));const s=getSelection();s.removeAllRanges();s.addRange(r);cp.textContent='Selected, press Ctrl/⌘C'}) };
+  }
+  show();
+}
+
+$('#footNote').textContent='';
+intro();
+})();
+</script>
+</body>
+</html>
