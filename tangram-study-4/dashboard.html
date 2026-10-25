@@ -128,8 +128,8 @@ const STIM_SET='v8-candles';
 const KEY={TS:'Taper · standing',TM:'Taper · moving',PS:'Pillar · standing',PM:'Pillar · moving'};
 const CONDS=[['candle','Candle frame'],['person','Person frame'],['free','Baseline: named, no frame'],['shape','Shape only: no naming']];
 const CATS=[
-  {id:'veh', label:'Same candle', long:'Same candle shape (taper or pillar), different action', pairs:['TM-TS','PM-PS'], split:'candle (taper vs pillar)', splitLabel:'Grouped by candle (tapers | pillars)', color:'var(--c-veh)'},
-  {id:'pose',label:'Same action', long:'Same action (still or moving), different candle', pairs:['PS-TS','PM-TM'], split:'person (still vs moving)', splitLabel:'Grouped by action (still | moving)', color:'var(--c-pose)'},
+  {id:'veh', label:'Same candle', long:'Same candle shape (taper or pillar), different pose', pairs:['TM-TS','PM-PS'], split:'candle (taper vs pillar)', splitLabel:'Grouped by candle (tapers | pillars)', color:'var(--c-veh)'},
+  {id:'pose',label:'Same pose', long:'Same pose (still or moving), different candle', pairs:['PS-TS','PM-TM'], split:'person (still vs moving)', splitLabel:'Grouped by pose (still | moving)', color:'var(--c-pose)'},
   {id:'none',label:'Differ on both', long:'Differ on both', pairs:['PM-TS','PS-TM'], split:'neither (differ on both)', splitLabel:'Neither', color:'var(--c-none)'}];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -187,7 +187,7 @@ function renderPair(){
     return `<div><div class="rowlab"><b>${esc(clab)}</b><span>n = ${n}</span></div><div class="stack" role="img" aria-label="${esc(clab)}: ${st.map(c=>c.splitLabel+' '+c.picks).join(', ')}">${segs}</div></div>`;
   }).join('');
   const allPairs=CATS.flatMap(c=>c.pairs);
-  $('#table').innerHTML=`<table><thead><tr><th>Version</th><th>n</th>${CATS.map(c=>`<th>${c.label} (mean)</th>`).join('')}${allPairs.map(p=>`<th>${p}</th>`).join('')}${CATS.map(c=>`<th>Split: ${c.id==='veh'?'by candle':c.id==='pose'?'by action':'neither'}</th>`).join('')}</tr></thead><tbody>`+
+  $('#table').innerHTML=`<table><thead><tr><th>Version</th><th>n</th>${CATS.map(c=>`<th>${c.label} (mean)</th>`).join('')}${allPairs.map(p=>`<th>${p}</th>`).join('')}${CATS.map(c=>`<th>Split: ${c.id==='veh'?'by candle':c.id==='pose'?'by pose':'neither'}</th>`).join('')}</tr></thead><tbody>`+
     CONDS.map(([cid,clab])=>{ const rs=runs.filter(r=>r.condition===cid), st=stats(rs);
       return `<tr><td>${esc(clab)}</td><td class="n">${rs.length}</td>${st.map(c=>`<td class="n">${f2(c.m)}</td>`).join('')}${st.flatMap(c=>c.pm).map(v=>`<td class="n">${f2(v)}</td>`).join('')}${st.map(c=>`<td class="n">${c.picks}</td>`).join('')}</tr>`; }).join('')+`</tbody></table>`;
 }
