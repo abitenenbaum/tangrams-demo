@@ -175,7 +175,7 @@ function itemScreen(k){
       <div class="fig" id="figBox">${svg(code,{interactive:wholeDone,assign,selected})}</div>
       <div class="panel">
         <div class="q">${wholeDone?`<label>${esc(TX.whole)}</label><div class="locked"><b>${esc(st.whole)}</b><button class="linkbtn" id="editWhole">Change</button></div>`:
-          `<label for="whole">${esc(TX.whole)}</label><div class="row"><input type="text" id="whole" autocomplete="off" maxlength="300" placeholder="A few words or a sentence"><button class="primary" id="wholeOk" disabled>Continue</button></div>`}</div>
+          `<label for="whole">${esc(TX.whole)}</label><div class="row"><input type="text" id="whole" autocomplete="off" maxlength="300" placeholder="A few words"><button class="primary" id="wholeOk" disabled>Continue</button></div>`}</div>
         ${wholeDone?`<div class="q">
           <label for="partName">${esc(TX.parts)}</label>
           <p class="help">Click the piece or pieces that make up one part, type the part's name, and press Add part. Keep going until every piece belongs to a part.</p>
