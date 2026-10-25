@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tangram Study Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a live results board for projecting during a talk. Header with counts and refresh state, a key to the four pictures,
+   then two charts that compare the four versions of the study: mean similarity by pair type (small multiples) and the pairing chosen (100% bars). */
+:root{
+  --bg:#f3f4f7; --surface:#ffffff; --sunk:#eceef2; --ink:#1c2230; --ink2:#454d5c; --muted:#5d6676; --line:#d6dae2; --grid:#e4e7ec;
+  --accent:#2f55b4; --tan:#2c3446; --ok:#2e7d4f; --warn:#a15c00;
+  --c-veh:#2a78d6; --c-pose:#eb6834; --c-none:#6b7280; --on-mark:#ffffff;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12151b; --surface:#1a1f28; --sunk:#10141a; --ink:#e5e8ee; --ink2:#c2c8d2; --muted:#9aa3b2; --line:#2c3340; --grid:#262c37;
+  --accent:#8fa8f0; --tan:#d4d9e2; --ok:#6fcf97; --warn:#f0b35a;
+  --c-veh:#3987e5; --c-pose:#d95926; --c-none:#7d8594; --on-mark:#ffffff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151b; --surface:#1a1f28; --sunk:#10141a; --ink:#e5e8ee; --ink2:#c2c8d2; --muted:#9aa3b2; --line:#2c3340; --grid:#262c37;
+  --accent:#8fa8f0; --tan:#d4d9e2; --ok:#6fcf97; --warn:#f0b35a;
+  --c-veh:#3987e5; --c-pose:#d95926; --c-none:#7d8594; --on-mark:#ffffff; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:16px}
+h1{font-size:1.9rem;font-weight:600;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0}
+.status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;vertical-align:1px}
+.dot.live{background:var(--ok)} .dot.err{background:var(--warn)}
+.big{font-family:var(--mono);font-size:1.5rem;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+button{font:inherit;font-size:14px;border-radius:8px;padding:6px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.banner{border:1px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-size:1.25rem;font-weight:600;margin:0 0 4px}
+.card .q{color:var(--muted);margin:0 0 12px;font-size:15px}
+.key{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.key figure{margin:0;display:flex;align-items:center;gap:10px;background:var(--sunk);border-radius:10px;padding:8px 10px}
+.key svg{width:56px;height:auto;flex:0 0 56px}
+.key .pc{fill:var(--tan);stroke:var(--sunk);stroke-width:.06;stroke-linejoin:round}
+.key b{font-family:var(--mono);font-weight:500}
+.key span{font-size:14px;color:var(--ink2);line-height:1.3}
+@media (max-width:820px){.key{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 10px;font-size:14px;color:var(--ink2)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.multiples{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:980px){.multiples{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.multiples{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--sunk);border-radius:10px;padding:10px 10px 4px}
+.panel h3{font-size:15px;font-weight:600;margin:0 4px 0}
+.panel .n{font-family:var(--mono);font-size:13px;color:var(--muted);margin:0 4px 4px}
+.panel svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--sans)}
+.ax{fill:var(--muted);font-size:12px;font-family:var(--mono)}
+.gl{stroke:var(--grid);stroke-width:1}
+.base{stroke:var(--line);stroke-width:1}
+.val{fill:var(--ink);font-size:15px;font-weight:600;font-family:var(--mono)}
+.cat{fill:var(--ink2);font-size:12px}
+.empty{fill:var(--muted);font-size:13px}
+.hit{fill:transparent;cursor:default}
+.rows{display:flex;flex-direction:column;gap:12px}
+.rowlab{display:flex;justify-content:space-between;gap:10px;font-size:15px;margin-bottom:4px}
+.rowlab b{font-weight:600} .rowlab span{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.stack{display:flex;gap:2px;height:38px;border-radius:4px;overflow:hidden;background:var(--sunk)}
+.seg{display:flex;align-items:center;justify-content:center;color:var(--on-mark);font-weight:600;font-family:var(--mono);font-size:15px;min-width:0;overflow:hidden;white-space:nowrap}
+.stack .none-yet{color:var(--muted);font-size:13px;padding:0 10px;display:flex;align-items:center}
+#tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.15);max-width:260px;z-index:10;display:none}
+#tip b{font-weight:600}
+#tip .m{font-family:var(--mono)}
+details{margin-top:6px}
+summary{cursor:pointer;color:var(--accent);font-size:14px}
+.tbl{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line)}
+th{font-size:12.5px;font-weight:600;color:var(--muted);background:var(--sunk)}
+td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Tangram Study: live results</h1>
+      <p class="sub">Four versions of the same study, compared side by side. Stimulus set: <span style="font-family:var(--mono)">v6-candles</span></p>
+    </div>
+    <div class="status">
+      <span><span class="big" id="total">0</span> responses</span>
+      <span id="state"><span class="dot"></span>Connecting…</span>
+      <button id="fresh" title="Hide responses received before now (for example, test runs)">Start fresh from now</button>
+      <button id="all" hidden>Show all responses</button>
+    </div>
+  </header>
+  <div id="banner"></div>
+
+  <section class="card" aria-labelledby="keyH">
+    <h2 id="keyH">The four pictures</h2>
+    <div class="key" id="key"></div>
+  </section>
+
+  <section class="card" aria-labelledby="simH">
+    <h2 id="simH">How similar did each pair look?</h2>
+    <p class="q">Mean rating from 1 (not at all similar) to 7 (very similar), by the kind of pair.</p>
+    <div class="legend" id="simLegend"></div>
+    <div class="multiples" id="sim"></div>
+  </section>
+
+  <section class="card" aria-labelledby="pairH">
+    <h2 id="pairH">How did people split the four into two pairs?</h2>
+    <p class="q">Share of people choosing each split.</p>
+    <div class="legend" id="pairLegend"></div>
+    <div class="rows" id="pair"></div>
+    <details><summary>Show the numbers as a table</summary><div class="tbl" id="table"></div></details>
+  </section>
+</div>
+<div id="tip" role="status"></div>
+<script src="config.js"></script>
+<script>
+(function(){
+const ITEMS={"W": 5.7, "H": 7.114, "items": [{"code": "TS", "pieces": [{"pts": [[2.85, 1.764], [3.557, 1.057], [2.85, 0.35], [2.143, 1.057]]}, {"pts": [[1.35, 1.764], [3.35, 1.764], [3.35, 3.764]]}, {"pts": [[3.35, 1.764], [4.35, 1.764], [3.35, 2.764]]}, {"pts": [[2.35, 2.764], [3.35, 3.764], [3.35, 4.764], [2.35, 3.764]]}, {"pts": [[2.35, 3.764], [3.35, 4.764], [2.35, 5.764]]}, {"pts": [[3.35, 4.764], [3.35, 6.764], [1.35, 6.764]]}, {"pts": [[3.35, 5.764], [3.35, 6.764], [4.35, 6.764]]}]}, {"code": "TM", "pieces": [{"pts": [[2.85, 2.764], [3.557, 2.057], [2.85, 1.35], [2.143, 2.057]]}, {"pts": [[1.35, 2.764], [2.35, 2.764], [2.35, 3.764]]}, {"pts": [[2.35, 2.764], [4.35, 2.764], [2.35, 4.764]]}, {"pts": [[3.35, 3.764], [3.35, 5.764], [1.35, 5.764]]}, {"pts": [[0.35, 4.764], [2.35, 4.764], [1.35, 5.764]]}, {"pts": [[3.35, 4.764], [4.35, 4.764], [3.35, 5.764]]}, {"pts": [[3.35, 5.764], [4.35, 4.764], [5.35, 4.764], [4.35, 5.764]]}]}, {"code": "PS", "pieces": [{"pts": [[2.85, 2.764], [3.557, 2.057], [2.85, 1.35], [2.143, 2.057]]}, {"pts": [[1.85, 2.764], [2.85, 2.764], [2.85, 3.764]]}, {"pts": [[1.85, 2.764], [2.85, 3.764], [1.85, 4.764]]}, {"pts": [[2.85, 2.764], [3.85, 2.764], [3.85, 3.764]]}, {"pts": [[2.85, 2.764], [3.85, 3.764], [3.85, 4.764], [2.85, 3.764]]}, {"pts": [[2.85, 3.764], [2.85, 5.764], [0.85, 5.764]]}, {"pts": [[2.85, 3.764], [4.85, 5.764], [2.85, 5.764]]}]}, {"code": "PM", "pieces": [{"pts": [[2.85, 2.764], [3.557, 2.057], [2.85, 1.35], [2.143, 2.057]]}, {"pts": [[1.85, 2.764], [3.85, 2.764], [1.85, 4.764]]}, {"pts": [[3.85, 2.764], [3.85, 3.764], [2.85, 4.764], [2.85, 3.764]]}, {"pts": [[2.85, 3.764], [2.85, 4.764], [1.85, 4.764]]}, {"pts": [[3.85, 3.764], [3.85, 5.764], [1.85, 5.764]]}, {"pts": [[0.85, 4.764], [2.85, 4.764], [1.85, 5.764]]}, {"pts": [[3.85, 4.764], [4.85, 4.764], [3.85, 5.764]]}]}]};
+const STIM_SET='v6-candles';
+const KEY={TS:'Taper · standing',TM:'Taper · moving',PS:'Pillar · standing',PM:'Pillar · moving'};
+const CONDS=[['candle','Candle frame'],['person','Person frame'],['free','Baseline: named, no frame'],['shape','Shape only: no naming']];
+const CATS=[
+  {id:'veh', label:'Same candle', long:'Same candle shape (taper or pillar), different action', pairs:['TM-TS','PM-PS'], split:'candle (taper vs pillar)', splitLabel:'Grouped by candle (tapers | pillars)', color:'var(--c-veh)'},
+  {id:'pose',label:'Same action', long:'Same action (still or moving), different candle', pairs:['PS-TS','PM-TM'], split:'person (still vs moving)', splitLabel:'Grouped by action (still | moving)', color:'var(--c-pose)'},
+  {id:'none',label:'Differ on both', long:'Differ on both', pairs:['PM-TS','PS-TM'], split:'neither (differ on both)', splitLabel:'Neither', color:'var(--c-none)'}];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const url=((window.TANGRAM_CONFIG||{}).endpoint||'').trim();
+const DEMO=location.hash==='#demo';
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+let since=store.get('tangram-since-'+STIM_SET); let runs=[]; let lastOk=null;
+
+// key
+$('#key').innerHTML=ITEMS.items.map(it=>`<figure><svg viewBox="0 0 ${ITEMS.W} ${ITEMS.H}" aria-hidden="true">${it.pieces.map(p=>`<polygon class="pc" points="${p.pts.map(q=>q.join(',')).join(' ')}"/>`).join('')}</svg><figcaption><b>${it.code}</b><br><span>${KEY[it.code]}</span></figcaption></figure>`).join('');
+$('#simLegend').innerHTML=CATS.map(c=>`<span><i style="background:${c.color}"></i>${c.long} <span style="color:var(--muted)">(${c.pairs.join(', ')})</span></span>`).join('');
+$('#pairLegend').innerHTML=CATS.map(c=>`<span><i style="background:${c.color}"></i>${c.splitLabel}</span>`).join('');
+
+// tooltip
+const tip=$('#tip');
+function showTip(e,html){ tip.innerHTML=html; tip.style.display='block'; const r=tip.getBoundingClientRect(); let x=e.clientX+14, y=e.clientY+14; if(x+r.width>innerWidth-8) x=e.clientX-r.width-14; if(y+r.height>innerHeight-8) y=e.clientY-r.height-14; tip.style.left=x+'px'; tip.style.top=y+'px'; }
+function hideTip(){ tip.style.display='none'; }
+document.addEventListener('mousemove',e=>{ const t=e.target.closest('[data-tip]'); t?showTip(e,t.dataset.tip):hideTip(); });
+document.addEventListener('focusin',e=>{ const t=e.target.closest('[data-tip]'); if(t){const r=t.getBoundingClientRect(); showTip({clientX:r.left+r.width/2,clientY:r.top},t.dataset.tip);} });
+document.addEventListener('focusout',hideTip);
+
+function stats(rs){
+  const pv=p=>rs.map(r=>r.sim&&r.sim[p]).filter(v=>typeof v==='number'&&!isNaN(v));
+  return CATS.map(c=>{ const a=pv(c.pairs[0]), b=pv(c.pairs[1]); return {...c, m:mean(a.concat(b)), k:a.length+b.length, pm:[mean(a),mean(b)], pk:[a.length,b.length], picks:rs.filter(r=>r.partition_type===c.split).length}; });
+}
+const f2=v=>v==null?'–':v.toFixed(2);
+
+function barPath(x,y,w,h,r){ r=Math.min(r,w/2,h); if(h<=0) return ''; return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`; }
+
+function renderSim(){
+  const W=300,H=230,L=30,R=8,T=26,B=40, ih=H-T-B, iw=W-L-R, y=v=>T+ih*(1-(v-1)/6);
+  $('#sim').innerHTML=CONDS.map(([cid,clab])=>{
+    const rs=runs.filter(r=>r.condition===cid), st=stats(rs);
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(clab)}: ${st.map(c=>c.label+' '+f2(c.m)).join(', ')}">`;
+    [1,4,7].forEach(v=>{ s+=`<line class="${v===1?'base':'gl'}" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-8}" y="${y(v)+4}" text-anchor="end">${v}</text>`; });
+    const slot=iw/3, bw=Math.min(54,slot*.56);
+    st.forEach((c,i)=>{ const cx=L+slot*i+slot/2, x=cx-bw/2;
+      s+=`<text class="cat" x="${cx}" y="${H-B+18}" text-anchor="middle">${c.label}</text>`;
+      if(c.m!=null){ const top=y(c.m); s+=`<path d="${barPath(x,top,bw,y(1)-top,4)}" fill="${c.color}"/><text class="val" x="${cx}" y="${top-7}" text-anchor="middle">${f2(c.m)}</text>`; }
+      const tipHtml=`<b>${esc(clab)}</b><br>${esc(c.long)}: <span class="m">${f2(c.m)}</span><br>${c.pairs.map((p,j)=>`${p}: <span class="m">${f2(c.pm[j])}</span> (${c.pk[j]} ratings)`).join('<br>')}`;
+      s+=`<rect class="hit" x="${L+slot*i}" y="${T-20}" width="${slot}" height="${ih+20+B}" data-tip="${esc(tipHtml)}" tabindex="0"/>`;
+    });
+    if(!rs.length) s+=`<text class="empty" x="${L+iw/2}" y="${T+ih/2}" text-anchor="middle">No responses yet</text>`;
+    return `<div class="panel"><h3>${esc(clab)}</h3><p class="n">n = ${rs.length}</p>${s}</svg></div>`;
+  }).join('');
+}
+
+function renderPair(){
+  $('#pair').innerHTML=CONDS.map(([cid,clab])=>{
+    const rs=runs.filter(r=>r.condition===cid), st=stats(rs), n=st.reduce((a,c)=>a+c.picks,0);
+    const segs=n?st.filter(c=>c.picks).map(c=>{ const pct=100*c.picks/n; const t=`<b>${esc(clab)}</b><br>${esc(c.splitLabel)}<br><span class="m">${c.picks} of ${n}</span> (${Math.round(pct)}%)`;
+      return `<div class="seg" style="flex:${c.picks} 1 0;background:${c.color}" data-tip="${esc(t)}" tabindex="0">${pct>=9?Math.round(pct)+'%':''}</div>`; }).join('')
+      :`<span class="none-yet">No responses yet</span>`;
+    return `<div><div class="rowlab"><b>${esc(clab)}</b><span>n = ${n}</span></div><div class="stack" role="img" aria-label="${esc(clab)}: ${st.map(c=>c.splitLabel+' '+c.picks).join(', ')}">${segs}</div></div>`;
+  }).join('');
+  const allPairs=CATS.flatMap(c=>c.pairs);
+  $('#table').innerHTML=`<table><thead><tr><th>Version</th><th>n</th>${CATS.map(c=>`<th>${c.label} (mean)</th>`).join('')}${allPairs.map(p=>`<th>${p}</th>`).join('')}${CATS.map(c=>`<th>Split: ${c.id==='veh'?'by candle':c.id==='pose'?'by action':'neither'}</th>`).join('')}</tr></thead><tbody>`+
+    CONDS.map(([cid,clab])=>{ const rs=runs.filter(r=>r.condition===cid), st=stats(rs);
+      return `<tr><td>${esc(clab)}</td><td class="n">${rs.length}</td>${st.map(c=>`<td class="n">${f2(c.m)}</td>`).join('')}${st.flatMap(c=>c.pm).map(v=>`<td class="n">${f2(v)}</td>`).join('')}${st.map(c=>`<td class="n">${c.picks}</td>`).join('')}</tr>`; }).join('')+`</tbody></table>`;
+}
+
+function render(){
+  $('#total').textContent=runs.length;
+  $('#fresh').hidden=!!since; $('#all').hidden=!since;
+  renderSim(); renderPair();
+}
+function setState(cls,txt){ $('#state').innerHTML=`<span class="dot ${cls}"></span>${esc(txt)}`; }
+
+let all=[];
+function apply(){ runs=all.filter(r=>CONDS.some(c=>c[0]===r.condition)&&(!r.stimulus_set||r.stimulus_set===STIM_SET)&&(!since||String(r.received_at)>=since)); render(); }
+$('#fresh').onclick=()=>{ since=new Date().toISOString(); store.set('tangram-since-'+STIM_SET,since); apply(); };
+$('#all').onclick=()=>{ since=null; store.set('tangram-since-'+STIM_SET,null); apply(); };
+
+async function poll(){
+  try{
+    const res=await fetch(url+(url.includes('?')?'&':'?')+'t='+Date.now(),{cache:'no-store'});
+    const j=await res.json(); all=Array.isArray(j.runs)?j.runs:[]; lastOk=new Date(); apply();
+    setState('live','Live · updated '+lastOk.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'}));
+  }catch(e){ setState('err',lastOk?'Reconnecting… last update '+lastOk.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'Could not reach the results sheet'); }
+}
+
+function demo(){
+  const rnd=(m)=>Math.max(1,Math.min(7,Math.round(m+(Math.random()*2.4-1.2))));
+  const prof={candle:{veh:5.6,pose:3.2,none:2.4,sp:[.7,.2,.1]},person:{veh:3.4,pose:5.5,none:2.6,sp:[.15,.75,.1]},free:{veh:4.4,pose:4.6,none:2.7,sp:[.4,.45,.15]},shape:{veh:4.9,pose:4.0,none:3.1,sp:[.55,.3,.15]}};
+  all=[]; Object.entries(prof).forEach(([c,p])=>{ const n=6+Math.floor(Math.random()*10); for(let i=0;i<n;i++){ const sim={}; CATS.forEach(k=>k.pairs.forEach(pp=>sim[pp]=rnd(p[k.id]))); const u=Math.random(); const sp=u<p.sp[0]?0:u<p.sp[0]+p.sp[1]?1:2; all.push({received_at:new Date().toISOString(),condition:c,sim,partition_type:CATS[sp].split}); } });
+  since=null; apply(); setState('', 'Demo data');
+}
+
+if(DEMO){ $('#banner').innerHTML=`<div class="banner">Demo mode: these numbers are made up, to preview the layout. Remove <b>#demo</b> from the address to see real responses.</div>`; demo(); }
+else if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){ render(); setState('err','Not connected'); $('#banner').innerHTML=`<div class="banner">This dashboard is not connected to a results sheet yet. Paste your Apps Script web app URL into <b>config.js</b>. To preview the layout with made-up numbers, add <b>#demo</b> to the address.</div>`; }
+else { render(); poll(); setInterval(poll,8000); }
+window.addEventListener('hashchange',()=>location.reload());
+})();
+</script>
+</body>
+</html>
