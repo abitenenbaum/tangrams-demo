@@ -233,7 +233,7 @@ function simScreen(k){
 function partitionOf(pairs){
   const key=pairs.map(p=>p.slice().sort().join('+')).sort().join(' | ');
   const has=(x,y)=>pairs.some(p=>p.includes(x)&&p.includes(y));
-  return {key,type:has('RA','RL')?'vehicle (rocket vs ship)':has('RA','SA')?'person (arms vs legs)':'neither (differ on both)'};
+  return {key,type:has('RA','RL')?'vehicle (rocket vs ship)':has('SA','RL')?'person (closed vs open)':'neither (differ on both)'};
 }
 
 function pairScreen(){
