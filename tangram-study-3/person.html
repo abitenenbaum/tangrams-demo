@@ -123,7 +123,7 @@ const COND_TEXT={
  candle:{intro:"You will see four pictures, each built from seven tangram pieces.</p><p><b>Each picture shows a candle.</b>",noun:'candle',nouns:'candles',
    whole:'Describe this candle.',parts:'Now name the parts of this candle.',sim:'How similar are these two candles?',
    pair:'Split the four candles into two pairs, so that the two candles in each pair are the most similar to each other.'},
- person:{intro:"You will see four pictures, each built from seven tangram pieces.</p><p><b>Each picture shows a person doing something, like standing, sitting, or jumping in the air.</b>",noun:'person',nouns:'people',
+ person:{intro:"You will see four pictures, each built from seven tangram pieces.</p><p><b>Each picture shows a person doing something, like standing, sitting, or jumping in the air.</b>",noun:'person',nouns:'people',simHead:"Comparing the people's actions",simWhat:'their actions are',
    whole:'Describe what this person is doing.',parts:'Now name the parts of this person.',sim:"How similar is what these two people are doing?",
    pair:"Split the four people into two pairs, so that the two people in each pair are doing the most similar thing."},
  free:{intro:"You will see four pictures, each built from seven tangram pieces.",noun:'picture',nouns:'pictures',
@@ -221,7 +221,7 @@ function itemScreen(k){
 
 function simIntro(){
   stepNo=5; setStep('Comparing');
-  app.innerHTML=`<h2>Comparing the ${esc(TX.nouns)}</h2><p>Next you will see the ${esc(TX.nouns)} two at a time. For each pair, say how similar they are on a scale from 1 (not at all similar) to 7 (very similar).</p><div class="nav"><button class="primary" id="go">Start comparing</button></div>`;
+  app.innerHTML=`<h2>${esc(TX.simHead||('Comparing the '+TX.nouns))}</h2><p>Next you will see the ${esc(TX.nouns)} two at a time. For each pair, say how similar ${esc(TX.simWhat||'they are')} on a scale from 1 (not at all similar) to 7 (very similar).</p><div class="nav"><button class="primary" id="go">Start comparing</button></div>`;
   $('#go').onclick=()=>simScreen(0);
 }
 
