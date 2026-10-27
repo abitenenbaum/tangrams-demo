@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tangram Study</title>
+<style>
+:root{--bg:#f3f4f7;--surface:#fff;--ink:#1c2230;--muted:#5d6676;--line:#d6dae2;--accent:#2f55b4;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151b;--surface:#1a1f28;--ink:#e5e8ee;--muted:#9aa3b2;--line:#2c3340;--accent:#8fa8f0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12151b;--surface:#1a1f28;--ink:#e5e8ee;--muted:#9aa3b2;--line:#2c3340;--accent:#8fa8f0;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:32px 16px}
+h1{font-size:1.6rem;margin:0 0 6px}
+p{color:var(--muted);margin:0 0 18px}
+ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+a{display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--accent);text-decoration:none;font-weight:600}
+a span{display:block;color:var(--muted);font-weight:400;font-size:14px}
+a:hover,a:focus-visible{border-color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Tangram Study</h1>
+  <p>Researcher index. Share each version's own link with participants.</p>
+  <ul>
+    <li><a href="light.html">Version A <span>Light-source frame</span></a></li>
+    <li><a href="person.html">Version B <span>Person frame (poses)</span></a></li>
+    <li><a href="dashboard.html">Live results <span>Similarity and pairing for both versions</span></a></li>
+  </ul>
+</main>
+</body>
+</html>
